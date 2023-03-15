@@ -34,6 +34,9 @@ robot_position = [0, 0]
 # Position of the goal
 goal_position = [3, 3]
 
+global_angle = 0
+first_scan_flag = True
+
 # Calculate the number of Lidar indices that represent the robot's width
 ROBOT_WIDTH_INDICES = int((ROBOT_WIDTH / (2 * np.pi * LIDAR_MAX_RANGE)) * LIDAR_FOV / LIDAR_RESOLUTION)
 
@@ -414,6 +417,8 @@ def plot_scores(scores, best_direction):
 
 def callback(data):
     #global PLOT_ENABLED_DISTANCE, PLOT_ENABLED_SCORE, PLOT_ENABLED_FREE_SPACE, robot_position, goal_position
+    
+    global global_angle, first_scan_flag
     current_time = rospy.get_time()
     finite_ranges = remove_nan_and_inf(data.ranges)
   #  smoothed_distances = savgol_filter(finite_ranges, 5, 3)  
@@ -429,6 +434,10 @@ def callback(data):
     #rotation code
     if best_direction is not None:
         print("Best Direction in radians " + str(best_direction))
+        if first_scan_flag:
+        	global_angle += best_direction%(2*np.pi)
+        	first_scan_flag = False
+         
         #rotation_direction = 1 if best_direction > len(finite_ranges) // 2 else 2
         rotation_direction = 1 if best_direction > 3.1415 else 2 #rads
         #if best_direction < 5 or best_direction > (len(finite_ranges) - 5):
@@ -446,9 +455,10 @@ def callback(data):
     #done turning and ready to move forward
     if turn_mode == False:
         cur_time = rospy.get_time()
-        while rospy.get_time() - cur_time <=.1:
+        while rospy.get_time() - cur_time <=.4:
             pub.publish(3)
         pub.publish(5)
+        first_scan_flag = True
         #pause 1 second after moving forward
         time.sleep(1)
     

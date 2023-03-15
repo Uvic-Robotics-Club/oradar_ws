@@ -44,8 +44,8 @@ void back(){
 }
 
 void spinleft(){
-  rightside_forward(200);
-  leftside_back(200);
+  rightside_forward(255);
+  leftside_back(255);
 }
 
 void spinright(){
