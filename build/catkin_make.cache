@@ -1,0 +1,2 @@
+oradar_ros
+-DCATKIN_DEVEL_PREFIX=/home/jetson/oradar_ws/devel -DCMAKE_INSTALL_PREFIX=/home/jetson/oradar_ws/install -G Unix Makefiles

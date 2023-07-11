@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/jetson/oradar_ros/build/devel/setup.sh
