@@ -141,3 +141,139 @@ void loop() {
   delay(1000);
  }
 ```
+the code with functions for turning the rover is listed below. This is simple tank drive where turning is moving one side forward and the other side backwards. Maybe a turn by only turning one side would be more appropriate
+
+```
+
+
+void setup() {
+  // put your setup code here, to run once:
+  // Set motor control pins as output
+  pinMode(1, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(7, OUTPUT);
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(12, OUTPUT);
+
+  digitalWrite(1, LOW);
+  digitalWrite(2, LOW);
+  digitalWrite(3, LOW);
+  digitalWrite(4, LOW);
+  digitalWrite(5, LOW);
+  digitalWrite(6, LOW);
+  digitalWrite(7, LOW);
+  digitalWrite(8, LOW);
+  digitalWrite(9, LOW);
+  digitalWrite(10, LOW);
+  digitalWrite(11, LOW);
+  digitalWrite(12, LOW);
+
+  
+}
+
+void leftside_forward(){
+  digitalWrite(2, HIGH); //pin 2 is direction on motor controller 1
+  digitalWrite(3, HIGH); //pin 3 is the enable pin on the motor controller
+  digitalWrite(4, HIGH); //pin 4 is direction on motor controller 2
+  digitalWrite(5, HIGH); //pin 5 is the enable pin on the motor controller
+  digitalWrite(6, HIGH); //pin 6 is direction on motor controller 3
+  digitalWrite(7, HIGH); //pin 7 is the enable pin on the motor controller
+}
+
+void leftside_back(){
+  digitalWrite(2, LOW); //pin 2 is direction on motor controller 1
+  digitalWrite(3, HIGH); //pin 3 is the enable pin on the motor controller
+  digitalWrite(4, LOW); //pin 4 is direction on motor controller 2
+  digitalWrite(5, HIGH); //pin 5 is the enable pin on the motor controller
+  digitalWrite(6, LOW); //pin 6 is direction on motor controller 3
+  digitalWrite(7, HIGH); //pin 7 is the enable pin on the motor controller
+}
+
+void leftside_stop(){
+  digitalWrite(2, LOW); //pin 2 is direction on motor controller 1
+  digitalWrite(3, LOW); //pin 3 is the enable pin on the motor controller
+  digitalWrite(4, LOW); //pin 4 is direction on motor controller 2
+  digitalWrite(5, LOW); //pin 5 is the enable pin on the motor controller
+  digitalWrite(6, LOW); //pin 6 is direction on motor controller 3
+  digitalWrite(7, LOW); //pin 7 is the enable pin on the motor controller
+}
+
+void rightside_forward(){
+  digitalWrite(8, HIGH); //pin 2 is direction on motor controller 1
+  digitalWrite(9, HIGH); //pin 3 is the enable pin on the motor controller
+  digitalWrite(10, HIGH); //pin 4 is direction on motor controller 2
+  digitalWrite(11, HIGH); //pin 5 is the enable pin on the motor controller
+  digitalWrite(12, HIGH); //pin 6 is direction on motor controller 3
+  digitalWrite(13, HIGH); //pin 7 is the enable pin on the motor controller
+}
+
+void rightside_back(){
+  digitalWrite(8, LOW); //pin 2 is direction on motor controller 1
+  digitalWrite(9, HIGH); //pin 3 is the enable pin on the motor controller
+  digitalWrite(10, LOW); //pin 4 is direction on motor controller 2
+  digitalWrite(11, HIGH); //pin 5 is the enable pin on the motor controller
+  digitalWrite(12, LOW); //pin 6 is direction on motor controller 3
+  digitalWrite(13, HIGH); //pin 7 is the enable pin on the motor controller
+}
+
+void rightside_stop(){
+  digitalWrite(8, LOW); //pin 2 is direction on motor controller 1
+  digitalWrite(9, LOW); //pin 3 is the enable pin on the motor controller
+  digitalWrite(10, LOW); //pin 4 is direction on motor controller 2
+  digitalWrite(11, LOW); //pin 5 is the enable pin on the motor controller
+  digitalWrite(12, LOW); //pin 6 is direction on motor controller 3
+  digitalWrite(13, LOW); //pin 7 is the enable pin on the motor controller
+}
+
+void forward(){
+  rightside_forward();
+  leftside_forward();
+}
+
+void back(){
+  rightside_back();
+  leftside_back();
+}
+
+void spinleft(){
+  rightside_back();
+  leftside_forward();
+}
+
+void spinright(){
+  rightside_forward();
+  leftside_back();
+}
+
+void stopspin(){
+  leftside_stop();
+  rightside_stop();
+}
+
+void loop() {
+  //rightside movement
+  forward();
+  delay(1000);
+  stopspin();
+  delay(1000);
+  back();
+  delay(1000);
+  stopspin();
+  delay(1000);
+  spinleft();
+  delay(1000);
+  stopspin();
+  delay(1000);
+  spinright();
+  delay(1000);
+  stopspin();
+  delay(1000);
+ }
+```
