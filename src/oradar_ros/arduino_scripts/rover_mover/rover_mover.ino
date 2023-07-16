@@ -1,4 +1,41 @@
+#include <ros.h>
+#include <ros.h>
+ros::NodeHandle nh;
 
+void motorCb(const std_msgs::Int16& cmd_msg){
+  digitalWrite(LED_BUILTIN, HIGH);  // Turn on the built-in LED when a message is received
+//  delay(500);  // Wait for half a second
+//  digitalWrite(LED_BUILTIN, LOW);  // Turn off the LED
+  switch(cmd_msg.data){
+    case 1:
+    spinright();
+    if(cmd_msg.data != 1){
+      break;
+    }
+    case 2:
+    spinleft();
+    if(cmd_msg.data != 2){
+      break;
+    }
+    case 3:
+    forward();
+    if(cmd_msg.data != 3){
+      break;
+    }
+    case 4:
+    back();
+    if(cmd_msg.data != 4){
+      break;
+    }
+    case 5:
+    stopspin();
+    if(cmd_msg.data != 5){
+      break;   
+    }
+  }
+}
+
+ros::Subscriber<std_msgs::Int16> sub("/motor_cmd", motorCb);
 
 void setup() {
   // put your setup code here, to run once:
@@ -71,20 +108,6 @@ void stopspin(){
 }
 
 void loop() {
-  //rightside movement
-  forward();
-  delay(1000);
-  stopspin();
-  delay(1000);
-  back();
-  delay(1000);
-  stopspin();
-  delay(1000);
-  spinleft();
-  delay(1000);
-  stopspin();
-  delay(1000);
-  spinright();
-  delay(1000);
-  stopspin();
+  nh.spinOnce();
+  delay(1);
  }
