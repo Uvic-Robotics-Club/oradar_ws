@@ -6,6 +6,7 @@ void motorCb(const std_msgs::Int16& cmd_msg){
   digitalWrite(LED_BUILTIN, HIGH);  // Turn on the built-in LED when a message is received
 //  delay(500);  // Wait for half a second
 //  digitalWrite(LED_BUILTIN, LOW);  // Turn off the LED
+//testing switch
   switch(cmd_msg.data){
     case 1:
     spinright();
