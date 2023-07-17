@@ -1,57 +1,7 @@
 #include <ros.h>
-#include <ros.h>
+#include <std_msgs/Int16.h>
 ros::NodeHandle nh;
 
-void motorCb(const std_msgs::Int16& cmd_msg){
-  digitalWrite(LED_BUILTIN, HIGH);  // Turn on the built-in LED when a message is received
-//  delay(500);  // Wait for half a second
-//  digitalWrite(LED_BUILTIN, LOW);  // Turn off the LED
-//testing switch
-  switch(cmd_msg.data){
-    case 1:
-    spinright();
-    if(cmd_msg.data != 1){
-      break;
-    }
-    case 2:
-    spinleft();
-    if(cmd_msg.data != 2){
-      break;
-    }
-    case 3:
-    forward();
-    if(cmd_msg.data != 3){
-      break;
-    }
-    case 4:
-    back();
-    if(cmd_msg.data != 4){
-      break;
-    }
-    case 5:
-    stopspin();
-    if(cmd_msg.data != 5){
-      break;   
-    }
-  }
-}
-
-ros::Subscriber<std_msgs::Int16> sub("/motor_cmd", motorCb);
-
-void setup() {
-  // put your setup code here, to run once:
-  // Set motor control pins as output
-  pinMode(2, OUTPUT);
-  pinMode(3, OUTPUT);
-  pinMode(4, OUTPUT);
-  pinMode(5, OUTPUT);
-
-  digitalWrite(2, LOW);
-  digitalWrite(3, LOW);
-  digitalWrite(4, LOW);
-  digitalWrite(5, LOW);
-  
-}
 
 void leftside_forward(int spin_speed){
   digitalWrite(2, HIGH); //pin 2 is direction on motor controller 1
@@ -94,13 +44,13 @@ void back(){
 }
 
 void spinleft(){
-  rightside_back(200);
-  leftside_forward(200);
+  rightside_forward(200);
+  leftside_back(200);
 }
 
 void spinright(){
-  rightside_forward(200);
-  leftside_back(200);
+  rightside_back(200);
+  leftside_forward(200);
 }
 
 void stopspin(){
@@ -108,7 +58,57 @@ void stopspin(){
   rightside_stop(0);
 }
 
+void motorCb(const std_msgs::Int16& cmd_msg){
+  digitalWrite(LED_BUILTIN, HIGH);  // Turn on the built-in LED when a message is received
+//  delay(500);  // Wait for half a second
+//  digitalWrite(LED_BUILTIN, LOW);  // Turn off the LED
+//testing switch
+  switch(cmd_msg.data){
+    case 1:
+    spinright();
+    break;
+     
+    case 2:
+    spinleft();
+    break;
+    
+    case 3:
+    forward();
+    break;
+  
+    case 4:
+    back();
+    break;
+   
+    case 5:
+    stopspin();
+    break;   
+  
+}
+}
+
+ros::Subscriber<std_msgs::Int16> sub("/motor_cmd", motorCb);
+
+void setup() {
+  // put your setup code here, to run once:
+  // Set motor control pins as output
+  pinMode(2, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+
+  digitalWrite(2, LOW);
+  digitalWrite(3, LOW);
+  digitalWrite(4, LOW);
+  digitalWrite(5, LOW);
+
+  Serial.begin(57600);
+  nh.initNode();
+  nh.subscribe(sub);
+  
+}
+
 void loop() {
-  nh.spinOnce();
-  delay(1);
+ nh.spinOnce();
+ delay(1);
  }

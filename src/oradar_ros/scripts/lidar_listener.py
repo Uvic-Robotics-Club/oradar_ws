@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 import rospy
 from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Int16
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import time
 
 # Set up plot
 fig, ax = plt.subplots()
 
 # Flag to enable or disable plotting
 PLOT_ENABLED_distance = False
-PLOT_ENABLED_SCORE = True
-ROBOT_WIDTH = .4
+PLOT_ENABLED_SCORE = False
+ROBOT_WIDTH = .2
 LIDAR_FOV = 360
 LIDAR_RESOLUTION = .8  # I found this by knowing 360 degrees/approx 450 data points per 1 rotation
 LIDAR_MAX_RANGE = 12  # meters  # Maximum reliable range of the LIDAR
@@ -25,6 +27,11 @@ goal_position = [3, 3]  # [x, y]
 # Calculate the number of Lidar indices that represent the robot's width
 ROBOT_WIDTH_INDICES = int((ROBOT_WIDTH / (2 * np.pi * LIDAR_MAX_RANGE)) * LIDAR_FOV / LIDAR_RESOLUTION)
 
+# Add publisher for "/motor_cmd"
+pub = rospy.Publisher('/motor_cmd', Int16, queue_size=1)
+
+	
+
 def plot_data(data):
     global ax
     plt.cla()  # Clear the old plot
@@ -32,11 +39,12 @@ def plot_data(data):
     plt.draw()  # Update the plot
     plt.pause(0.001)  # Needed to update the plot
 
-def plot_scores(scores):
+def plot_scores(scores,best_direction):
     global ax
     plt.cla()  # Clear the old plot
     angles = np.linspace(0, LIDAR_FOV, len(scores))  # Calculate the corresponding angle for each score
     ax.plot(angles, scores)  # Create a new plot
+    ax.scatter([angles[best_direction]], [scores[best_direction]], color = 'r')
     ax.set_xlabel('Angle (degrees)')  # Set x-axis label
     ax.set_ylabel('Score')  # Set y-axis label
     plt.draw()  # Update the plot
@@ -78,8 +86,38 @@ def callback(data):
     # Find the direction with the highest score
     best_direction = scores.index(max(scores))
 
+    # Determine the rotation direction
+    rotation_direction = 1 if best_direction > len(free_space) // 2 else 2  # 1 for right, 2 for left
+
+    # If the best direction is directly ahead (i.e., index 0), stop spinning
+    if best_direction < 10 or best_direction > 350:
+        cmd_msg = 5  # Stop motor command
+        time.sleep(1)
+    	#add delay
+
+    	
+    else:
+        cmd_msg = rotation_direction
+    pub.publish(cmd_msg)
+    
+    if(cmd_msg == 5):
+        #best_distance = free_space[best_direction]
+    	cur_time = rospy.get_time();
+    	
+    	while(rospy.get_time() - cur_time <=.1):
+    	    pub.publish(3)
+    	pub.publish(5)
+    	time.sleep(1)
+    #up to this point the robot turns to the correct angle
+    #now publish cmd_msg so that robot moves in best direction determined by some look ahead distance
+    #For now we will set robot look ahead to .5 meters
+    
+    
+    
+
+
     if PLOT_ENABLED_SCORE and current_time - callback.last_update_time >= 1.0:
-        plot_scores(scores)
+        plot_scores(scores, best_direction)
         # Update the last update time
         callback.last_update_time = current_time
 
