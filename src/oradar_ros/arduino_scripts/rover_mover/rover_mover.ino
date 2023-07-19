@@ -34,7 +34,7 @@ void rightside_stop(int spin_speed){
 }
 
 void forward(){
-  rightside_forward(125);
+  rightside_forward(125); //old value was 125
   leftside_forward(125);
 }
 
@@ -49,8 +49,8 @@ void spinleft(){
 }
 
 void spinright(){
-  rightside_back(200);
-  leftside_forward(200);
+  rightside_back(255);
+  leftside_forward(255);
 }
 
 void stopspin(){

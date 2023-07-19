@@ -12,7 +12,7 @@ fig, ax = plt.subplots()
 
 # Flag to enable or disable plotting
 PLOT_ENABLED_distance = False
-PLOT_ENABLED_SCORE = False
+PLOT_ENABLED_SCORE = True
 ROBOT_WIDTH = .2
 LIDAR_FOV = 360
 LIDAR_RESOLUTION = .8  # I found this by knowing 360 degrees/approx 450 data points per 1 rotation
