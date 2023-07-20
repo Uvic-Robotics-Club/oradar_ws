@@ -23,8 +23,8 @@ LiDAR_CHANGE_RANGE = 0.5 # meters
 # Flag to enable or disable plotting
 PLOT_ENABLED_DISTANCE = False
 PLOT_ENABLED_SCORE = False
-PLOT_ENABLED_FREE_SPACE = True #True # Flag for plotting free space
-PLOT_ENABLED_MIDPOINT = False
+PLOT_ENABLED_FREE_SPACE = False #True # Flag for plotting free space
+PLOT_ENABLED_MIDPOINT = True
 PLOT_ENABLED_DATA_RANGES = False
 
 
@@ -112,8 +112,69 @@ def threshold_free_space(distances, threshold):
     print(distances[1])
     return free_space
 '''
-#threshold_free_space starts at index n/2 and ends at index n/2 -1 this way directly in front of the rover does not possess a discontinuity
+
+#threshold_free_space starts at index n/2 and ends at index n/2 -1 this way directly in front of the rover does not possess a discontinuity because my theory is discontinuities would occur between 455 and 0
+
 def threshold_free_space(distances, threshold):
+    # Initialize free space list
+    free_space = [0]*len(distances)
+    n = len(distances)
+    start = n // 2
+    if n > 450:
+        for i in range(n):
+            # Change from blocked to free space
+            index = (start + i) % n
+            if distances[index] > threshold:
+                free_space[index] = threshold
+            # Change from free to blocked space
+            elif distances[index] <= threshold:
+                free_space[index] = 0
+    
+    return free_space
+
+#Threshold_groups starts index at n/2 so that there is no discontinuity at 0
+def threshold_groups(free_space):
+    free_space_groups = []
+    start = None
+    n = len(free_space)
+    begin = n//2
+    for i in range(n-1):
+        # Starting a new free space
+        index = (begin + i) % n
+        next_index = (begin + i + 1) % n
+        if free_space[index-1] == 0 and free_space[index] != 0:
+            start = index
+        # Ending a free space
+        elif free_space[index] != 0 and free_space[next_index] == 0:
+            if start is not None:
+                new_groups = (start, index)
+                free_space_groups.append(new_groups)
+                start = None
+    return free_space_groups
+
+#Free_space_data_points details the angle indices and distance for each pair of points    
+def free_space_data_points(free_space, groups):
+    free_space_data = []
+    for start, end in groups:
+        #print("Start of Group " + str(start) + " End of Group " + str(end))
+        a = free_space[start]
+        b = free_space[end]
+        #print("a is " +str(a) + "threshold" + str(threshold) + "b is " +str(b))
+        startrad = start*2*np.pi/len(free_space)
+        endrad = end*2*np.pi/len(free_space)
+        
+        
+        theta = abs(endrad - startrad)  # Assuming end and start are in degrees. Convert to radians if not.
+        
+        # Distance formula
+        distance = math.sqrt(a**2 + b**2 - 2*a*b*math.cos(theta))  # Use math.radians if theta is not in radians
+        #print("Distance is " + str(distance))
+        free_space_data.append({"distance": distance, "angle_indices": (startrad, endrad)})
+    #for fs in free_space_data:
+        #print("Distance:", fs["distance"], "Angle indices:", fs["angle_indices"])
+    return free_space_data   
+
+def identify_free_space(distances, threshold):
     # Initialize free space list
     free_space = [0]*len(distances)
     
@@ -128,19 +189,6 @@ def threshold_free_space(distances, threshold):
         # Change from free to blocked space
         elif distances[index] <= threshold:
             free_space[index] = 0
-    
-    return free_space
-
-def identify_free_space(distances, threshold):
-    # Initialize free space list
-    free_space = [0]*len(distances)
-    for i in range(0, len(distances)-1):
-        # Change from blocked to free space
-        if distances[i] > threshold:
-            free_space[i] = threshold
-        # Change from free to blocked space
-        elif distances[i] <= threshold:
-            free_space[i] = 0
 
     # Identifying free spaces that are bounded by zeros on both sides
     
@@ -181,20 +229,46 @@ def identify_free_space(distances, threshold):
     
     return free_space_data
 
-
-def get_possible_directions(distances, threshold, rover_width):
-    free_spaces = identify_free_space(distances, threshold)
+'''
+def get_possible_directions(free_space_data, data_ranges, rover_width):
     possible_directions = []
 
-    for fs in free_spaces:
+    for fs in free_space_data:
         distance = fs['distance']
         if distance >= rover_width:
             angle_indices = fs['angle_indices']
-            midpoint = ((angle_indices[0] + angle_indices[1])%len(distances)) / 2
+            print("Angle Indices: ", angle_indices)  # print the angle_indices
+            midpoint = ((angle_indices[0] + angle_indices[1])%len(data_ranges)) / 2
+            print("Midpoint: ", midpoint)  # print the midpoint
             possible_directions.append(midpoint)
-            #print(midpoint)
 
     return possible_directions
+'''
+
+def get_possible_directions(free_space_data, rover_width):
+
+
+    possible_directions = []
+
+    for fs in free_space_data:
+        distance = fs['distance']
+        if distance >= rover_width:
+            angle_indices = fs['angle_indices']
+            #print("Angle Indices: ", angle_indices)  # print the angle_indices
+
+            # ensure angle_indices[0] is less than angle_indices[1]
+            a1, a2 = min(angle_indices), max(angle_indices)
+
+            if a2 - a1 > math.pi:
+                a1 += 2 * math.pi
+
+            midpoint = (a1 + a2) / 2 % (2 * math.pi)
+            
+            #print("Midpoint: ", midpoint)  # print the midpoint
+            possible_directions.append(midpoint)
+
+    return possible_directions
+
 
 
 def plot_data(data):
@@ -242,14 +316,15 @@ def plot_data_ranges(data_ranges):
 
 
 def plot_free_space_polar(free_space):
-    plt.cla()
-    ax = plt.subplot(1, 1, 1, polar=True)  
-    theta = np.linspace(0, 2*np.pi, len(free_space))  # Create an array of equally spaced angle values between 0 and 2*pi
-    ax.plot(theta, free_space)  # Plot the free_space data at each angle
-    ax.set_theta_zero_location("N")  # Set 0 degrees to the top of the plot
-    ax.set_theta_direction(-1)  # Make angles increase in a clockwise direction
-    plt.draw()
-    plt.pause(0.001)
+    if len(free_space) > 450:
+        plt.cla()
+        ax = plt.subplot(1, 1, 1, polar=True)  
+        theta = np.linspace(0, 2*np.pi, len(free_space))  # Create an array of equally spaced angle values between 0 and 2*pi
+        ax.plot(theta, free_space)  # Plot the free_space data at each angle
+        ax.set_theta_zero_location("N")  # Set 0 degrees to the top of the plot
+        ax.set_theta_direction(-1)  # Make angles increase in a clockwise direction
+        plt.draw()
+        plt.pause(0.001)
 
 '''
 def plot_free_space(free_space_data):
@@ -265,10 +340,23 @@ def plot_free_space(free_space_data):
     plt.draw()
     plt.pause(0.001)
 '''
-  
+
+'''  
 def plot_polar_midpoints(midpoints):
     # Convert angles to radians and normalize
     midpoints_radians = [np.radians(midpoint) for midpoint in midpoints]
+    data = [1]*len(midpoints_radians)  # All angles have same priority
+    
+    plt.cla() 
+    ax = plt.subplot(1, 1, 1, polar=True)  # Create a new subplot in polar format
+    ax.plot(midpoints_radians, data, marker='o')  # Plot the midpoints at each angle
+    ax.set_theta_zero_location("N")  # Set 0 degrees to the top of the plot
+    ax.set_theta_direction(-1)  # Make angles increase in a clockwise direction
+    plt.draw()
+    plt.pause(0.001)
+'''
+
+def plot_polar_midpoints(midpoints_radians):
     data = [1]*len(midpoints_radians)  # All angles have same priority
     
     plt.cla() 
@@ -298,7 +386,9 @@ def callback(data):
     finite_ranges = remove_nan_and_inf(data.ranges)
   #  smoothed_distances = savgol_filter(finite_ranges, 5, 3)  
     free_space = threshold_free_space(data.ranges, THRESHOLD)
-    possible_directions = get_possible_directions(data.ranges, THRESHOLD, ROBOT_WIDTH)    
+    free_space_groups = threshold_groups(free_space)
+    free_space_data = free_space_data_points(free_space, free_space_groups)
+    possible_directions = get_possible_directions(free_space_data, ROBOT_WIDTH)    
     
     if PLOT_ENABLED_DISTANCE and current_time - callback.last_update_time >= 1.0:     
         #plot_free_space_polar(finite_ranges)
@@ -315,7 +405,7 @@ def callback(data):
     
     
     if PLOT_ENABLED_MIDPOINT and current_time - callback.last_update_time >= 1.0:
-    	#plot_polar_midpoints(possible_directions)
+    	plot_polar_midpoints(possible_directions)
     	callback.last_update_time = current_time
     	
     
