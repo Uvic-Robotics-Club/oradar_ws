@@ -24,7 +24,7 @@ LiDAR_CHANGE_RANGE = 0.5 # meters
 PLOT_ENABLED_DISTANCE = False
 PLOT_ENABLED_SCORE = False
 PLOT_ENABLED_FREE_SPACE = False #True # Flag for plotting free space
-PLOT_ENABLED_MIDPOINT = True
+PLOT_ENABLED_MIDPOINT = False
 PLOT_ENABLED_DATA_RANGES = False
 
 
@@ -149,6 +149,7 @@ def threshold_groups(free_space):
             if start is not None:
                 new_groups = (start, index)
                 free_space_groups.append(new_groups)
+                #print(new_groups)
                 start = None
     return free_space_groups
 
@@ -170,8 +171,8 @@ def free_space_data_points(free_space, groups):
         distance = math.sqrt(a**2 + b**2 - 2*a*b*math.cos(theta))  # Use math.radians if theta is not in radians
         #print("Distance is " + str(distance))
         free_space_data.append({"distance": distance, "angle_indices": (startrad, endrad)})
-    #for fs in free_space_data:
-        #print("Distance:", fs["distance"], "Angle indices:", fs["angle_indices"])
+  #  for fs in free_space_data:
+       # print("Distance:", fs["distance"], "Angle indices:", fs["angle_indices"])
     return free_space_data   
 
 def identify_free_space(distances, threshold):
@@ -245,6 +246,7 @@ def get_possible_directions(free_space_data, data_ranges, rover_width):
     return possible_directions
 '''
 
+#get_possible_directions outputs midway points in free_space groups
 def get_possible_directions(free_space_data, rover_width):
 
 
@@ -269,6 +271,19 @@ def get_possible_directions(free_space_data, rover_width):
 
     return possible_directions
 
+#find_best_direction finds the direction closest to 
+def find_best_direction(midpoints, goal_position, robot_position):
+
+    if not midpoints:
+        return None
+
+    goal_direction_dx = goal_position[0] - robot_position[0]
+    goal_direction_dy = goal_position[1] - robot_position[1]
+    goal_direction = math.atan2(goal_direction_dy, goal_direction_dx)
+
+    differences = [abs(midpoint - goal_direction) for midpoint in midpoints]
+    best_index = differences.index(min(differences))
+    return midpoints[best_index]
 
 
 def plot_data(data):
@@ -356,12 +371,29 @@ def plot_polar_midpoints(midpoints):
     plt.pause(0.001)
 '''
 
+'''
 def plot_polar_midpoints(midpoints_radians):
     data = [1]*len(midpoints_radians)  # All angles have same priority
     
     plt.cla() 
     ax = plt.subplot(1, 1, 1, polar=True)  # Create a new subplot in polar format
     ax.plot(midpoints_radians, data, marker='o')  # Plot the midpoints at each angle
+    ax.set_theta_zero_location("N")  # Set 0 degrees to the top of the plot
+    ax.set_theta_direction(-1)  # Make angles increase in a clockwise direction
+    plt.draw()
+    plt.pause(0.001)
+'''
+
+def plot_polar_midpoints(midpoints_radians, best_direction):
+    data = [1]*len(midpoints_radians)  # All angles have same priority
+
+    plt.cla()
+    ax = plt.subplot(1, 1, 1, polar=True)  # Create a new subplot in polar format
+
+    for i in range(len(midpoints_radians)):
+        color = 'red' if midpoints_radians[i] == best_direction else 'blue'
+        ax.plot(midpoints_radians[i], data[i], marker='o', color=color)  # Plot the midpoints at each angle
+
     ax.set_theta_zero_location("N")  # Set 0 degrees to the top of the plot
     ax.set_theta_direction(-1)  # Make angles increase in a clockwise direction
     plt.draw()
@@ -381,7 +413,7 @@ def plot_scores(scores, best_direction):
 
 
 def callback(data):
-    global PLOT_ENABLED_DISTANCE, PLOT_ENABLED_SCORE, PLOT_ENABLED_FREE_SPACE, robot_position, goal_position
+    #global PLOT_ENABLED_DISTANCE, PLOT_ENABLED_SCORE, PLOT_ENABLED_FREE_SPACE, robot_position, goal_position
     current_time = rospy.get_time()
     finite_ranges = remove_nan_and_inf(data.ranges)
   #  smoothed_distances = savgol_filter(finite_ranges, 5, 3)  
@@ -389,6 +421,38 @@ def callback(data):
     free_space_groups = threshold_groups(free_space)
     free_space_data = free_space_data_points(free_space, free_space_groups)
     possible_directions = get_possible_directions(free_space_data, ROBOT_WIDTH)    
+    best_direction = find_best_direction(possible_directions, goal_position, robot_position)
+    
+    
+    turn_mode = True
+    #rotation code
+    #rotation code
+    if best_direction is not None:
+        print("Best Direction in radians " + str(best_direction))
+        #rotation_direction = 1 if best_direction > len(finite_ranges) // 2 else 2
+        rotation_direction = 1 if best_direction > 3.1415 else 2 #rads
+        #if best_direction < 5 or best_direction > (len(finite_ranges) - 5):
+        if best_direction < .15 or (best_direction > 6.15): #rads
+            cmd_msg = 5
+            time.sleep(.1)
+            turn_mode = False
+        else:
+            cmd_msg = rotation_direction
+            
+    if best_direction is not None:
+        pub.publish(cmd_msg)
+        print("Command Msg " + str(cmd_msg))
+    
+    #done turning and ready to move forward
+    if turn_mode == False:
+        cur_time = rospy.get_time()
+        while rospy.get_time() - cur_time <=.1:
+            pub.publish(3)
+        pub.publish(5)
+        #pause 1 second after moving forward
+        time.sleep(1)
+    
+
     
     if PLOT_ENABLED_DISTANCE and current_time - callback.last_update_time >= 1.0:     
         #plot_free_space_polar(finite_ranges)
@@ -405,13 +469,10 @@ def callback(data):
     
     
     if PLOT_ENABLED_MIDPOINT and current_time - callback.last_update_time >= 1.0:
-    	plot_polar_midpoints(possible_directions)
+    	if possible_directions and best_direction is not None:
+    	    plot_polar_midpoints(possible_directions, best_direction)
     	callback.last_update_time = current_time
     	
-    
-    goal_direction_dx = goal_position[0] - robot_position[0]
-    goal_direction_dy = goal_position[1] - robot_position[1]
-    goal_direction = math.atan2(goal_direction_dy, goal_direction_dx)
 '''
     scores = []
     for i, distance in enumerate(free_space):
@@ -451,7 +512,8 @@ def listener():
     rospy.init_node('lidar_plot', anonymous=True)
     callback.last_update_time = rospy.get_time()
     rospy.Subscriber("/MS200/scan", LaserScan, callback, queue_size=1)
-    plt.show(block=True)
+    plt.show(block=False)
+    rospy.spin()
 
 if __name__ == '__main__':
     listener()
