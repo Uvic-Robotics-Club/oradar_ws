@@ -44,13 +44,15 @@ void back(){
 }
 
 void spinleft(){
-  rightside_forward(255);
-  leftside_back(255);
+  rightside_forward(200);
+  leftside_back(200);
+  //delay(10);
 }
 
 void spinright(){
-  rightside_back(255);
-  leftside_forward(255);
+  rightside_back(200);
+  leftside_forward(200);
+  //delay(10);
 }
 
 void stopspin(){
@@ -60,8 +62,8 @@ void stopspin(){
 
 void motorCb(const std_msgs::Int16& cmd_msg){
   digitalWrite(LED_BUILTIN, HIGH);  // Turn on the built-in LED when a message is received
-//  delay(500);  // Wait for half a second
-//  digitalWrite(LED_BUILTIN, LOW);  // Turn off the LED
+  delay(500);  // Wait for half a second
+  digitalWrite(LED_BUILTIN, LOW);  // Turn off the LED
 //testing switch
   switch(cmd_msg.data){
     case 1:

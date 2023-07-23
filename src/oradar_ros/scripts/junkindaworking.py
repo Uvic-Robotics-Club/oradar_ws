@@ -12,7 +12,7 @@ import time
 #fig, ax = plt.subplots()
 
 ROBOT_WIDTH = .3
-THRESHOLD = .6
+THRESHOLD = .4
 LIDAR_FOV = 360
 LIDAR_RESOLUTION = .8
 LIDAR_MAX_RANGE = 12  # meters
@@ -170,7 +170,7 @@ def find_best_direction(midpoints_data, goal_position, free_space):
 
         # Calculate the overall score
         #score = distance_weight * distance + direction_weight * direction_score
-        score = direction_weight * direction_score #+ distance*distance_weight
+        score = direction_weight * direction_score
         scores.append(score)
        # print(data)
       #  print(score)
@@ -200,7 +200,8 @@ def plot_data_ranges(data_ranges):
         ax.set_theta_direction(-1)  # Make angles increase in a clockwise direction
         plt.title("Data Ranges")
         plt.draw()
-        plt.pause(0.001)rrrr
+        plt.pause(0.001)
+
 
 
 def plot_free_space_polar(free_space):
@@ -287,7 +288,7 @@ def callback(data):
         rotation_direction = 1 if best_dir > len(free_space)/2 else 2 #rads
         #if best_direction < 5 or best_direction > (len(finite_ranges) - 5):
         #print(best_dir)
-        if best_dir < 15 or (best_dir > (len(free_space)-15)): #rads
+        if best_dir < 10 or (best_dir > (len(free_space)-10)): #rads
             cmd_msg = 5
             time.sleep(.2)
             turn_mode = False
@@ -295,7 +296,7 @@ def callback(data):
             cmd_msg = rotation_direction
         
         pub.publish(cmd_msg) 
-        time.sleep(.025)  
+        time.sleep(.1)  
         pub.publish(5)
     
         
@@ -304,9 +305,9 @@ def callback(data):
     #done turning and ready to move forward
     if turn_mode == False:
         cur_time = rospy.get_time()
-        #while rospy.get_time() - cur_time <=.1:
-        pub.publish(3)
-        time.sleep(.05)
+        while rospy.get_time() - cur_time <=.2:
+            pub.publish(3)
+            time.sleep(.05)
             #print(rospy.get_time() - cur_time)
         pub.publish(5)
         #first_scan_flag = True
