@@ -295,7 +295,7 @@ def callback(data):
             cmd_msg = rotation_direction
         
         pub.publish(cmd_msg) 
-        time.sleep(.025)  
+        time.sleep(.01)  
         pub.publish(5)
     
         
